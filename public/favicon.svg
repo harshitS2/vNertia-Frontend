@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Vnertia Favicon SVG
+  
+  This is the icon-only lockup (no "nertia" wordmark) — used as favicon,
+  browser tab icon, and app icon. Based on the brand guide icon proportions:
+  
+    Container : 160 × 160
+    Circle dia: 122px (1.22H where H = ~100)
+    Stroke    : ~11.5px
+    Arc sweep : 132° → 308° (open on the right)
+    V height  : 72px (0.72H)
+    Teal grad : #25C4CB → #1A8C96
+    Background: #0D2326 (dark navy, for app icon usage)
+-->
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 160 160"
+  width="160"
+  height="160"
+  role="img"
+  aria-label="Vnertia icon"
+>
+  <defs>
+    <linearGradient id="arc-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#25C4CB"/>
+      <stop offset="100%" stop-color="#1A8C96"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded square background for app-icon use -->
+  <rect width="160" height="160" rx="32" fill="#0D2326"/>
+
+  <!--
+    Open arc: circle r=50, center (80,88), stroke 10px
+    Start: 132° → End: 308° (sweep = 176°, open on the right)
+    
+    Converting to SVG arc path (angles measured from positive X-axis, rotated -90°):
+      132° from top = 132° - 90° = 42° from X-axis
+      308° from top = 308° - 90° = 218° from X-axis
+    
+    Start point: 80 + 50*cos(42°) = 80 + 37.2 = 117.2,  88 + 50*sin(42°) = 88 + 33.5 = 121.5
+    End point  : 80 + 50*cos(218°)= 80 - 39.4 = 40.6,   88 + 50*sin(218°)= 88 - 30.8 = 57.2
+    large-arc-flag = 0 (sweep < 180° → use 1 since our sweep IS > 180° actually 176° < 180)
+    Actually 176° < 180° so large-arc = 0
+  -->
+  <path
+    d="M 117.2 121.5 A 50 50 0 0 1 40.6 57.2"
+    fill="none"
+    stroke="url(#arc-grad)"
+    stroke-width="10"
+    stroke-linecap="round"
+  />
+
+  <!-- V glyph — bold, centred, dark navy colour -->
+  <text
+    x="80"
+    y="104"
+    text-anchor="middle"
+    font-family="Inter, Helvetica Neue, Arial, sans-serif"
+    font-weight="900"
+    font-size="72"
+    fill="#FFFFFF"
+    letter-spacing="-2"
+  >V</text>
+</svg>

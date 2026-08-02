@@ -1,0 +1,212 @@
+/**
+ * globals.css
+ *
+ * Global styles for Vnertia.com — Tailwind CSS v4 (CSS-first config).
+ *
+ * In Tailwind v4, ALL configuration happens here using @theme.
+ * @import rules must come FIRST (before any other rules).
+ *
+ * Sections:
+ *   1.  Google Fonts import (must be first @import)
+ *   2.  Tailwind v4 import
+ *   2.5 Theme CSS variables
+ *   3.  @theme — brand design tokens (colours, fonts, animations)
+ *   4.  Base HTML resets
+ *   5.  Utility layer — custom helpers
+ *   6.  Scrollbar + selection styles
+ *   7.  Text selection — teal highlight colour
+ */
+
+/* ============================================================
+   1. Google Fonts — must come before all other rules in CSS v4
+   Inter is the closest match to the geometric sans-serif in the
+   Vnertia brand guide.
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+/* ============================================================
+   2. Tailwind v4 — single import replaces the three v3 directives
+   ============================================================ */
+@import "tailwindcss";
+
+/* ============================================================
+   2.5. Theme CSS Variables
+   ============================================================ */
+:root {
+  /* Default: Midnight Navy (Dark) */
+  --bg-primary: #060f10;
+  --bg-secondary: #0d2326;
+  --bg-tertiary: #142e31;
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-muted: rgba(255, 255, 255, 0.4);
+  --teal-primary: #25C4CB;
+  --teal-dark: #1A8C96;
+  --teal-light: #94D3D8;
+  --slate-brand: #2B5156;
+  --glass-bg: rgba(255, 255, 255, 0.04);
+  --glass-border: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme='light'] {
+  /* Snow Teal (Light) */
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f1f5f9;
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --teal-primary: #0d9488;
+  --teal-dark: #0f766e;
+  --teal-light: #2dd4bf;
+  --slate-brand: #cbd5e1;
+  --glass-bg: rgba(15, 23, 42, 0.03);
+  --glass-border: rgba(15, 23, 42, 0.08);
+}
+
+[data-theme='cyberpunk'] {
+  /* Cyber Violet (Vibrant Synthwave) */
+  --bg-primary: #0b0314;
+  --bg-secondary: #17072b;
+  --bg-tertiary: #270e45;
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.75);
+  --text-muted: rgba(255, 255, 255, 0.45);
+  --teal-primary: #d946ef;
+  --teal-dark: #a21caf;
+  --teal-light: #f472b6;
+  --slate-brand: #6b21a8;
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(217, 70, 239, 0.15);
+}
+
+/* ============================================================
+   3. @theme — Vnertia brand design tokens
+      These become Tailwind utility classes:
+        bg-teal-primary, text-navy, animate-arc-spin, etc.
+   ============================================================ */
+@theme {
+  /* Brand colour palette mapped dynamically to CSS Variables */
+  --color-teal-primary:  var(--teal-primary);
+  --color-teal-dark:     var(--teal-dark);
+  --color-teal-light:    var(--teal-light);
+  --color-navy:          var(--bg-secondary);
+  --color-navy-deep:     var(--bg-primary);
+  --color-navy-alt:      var(--bg-tertiary);
+  --color-slate-brand:   var(--slate-brand);
+  --color-glass-bg:      var(--glass-bg);
+  --color-glass-border:  var(--glass-border);
+
+  /* Dynamic text colors */
+  --color-text-primary:   var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted:     var(--text-muted);
+
+  /* Font families */
+  --font-family-inter: "Inter", "Helvetica Neue", Arial, sans-serif;
+  --font-family-sans:  "Inter", "Helvetica Neue", Arial, sans-serif;
+
+  /* Animations registered for use as animate-* classes */
+  --animate-arc-spin:    arcSpin 12s linear infinite;
+  --animate-float:       float 6s ease-in-out infinite;
+  --animate-fade-in-up:  fadeInUp 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+
+  /* Keyframe definitions */
+  @keyframes arcSpin {
+    from { transform: rotate(0deg);   }
+    to   { transform: rotate(360deg); }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0);     }
+    50%       { transform: translateY(-12px); }
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0);    }
+  }
+}
+
+/* ============================================================
+   4. Base HTML resets
+   ============================================================ */
+@layer base {
+  html, body {
+    font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing:  antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+  }
+
+  /* Match hero background colour on load — prevents white flash */
+  body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* Clean link reset — components apply their own styles */
+  a { color: inherit; text-decoration: none; }
+
+  /* Teal brand focus ring for keyboard accessibility */
+  :focus-visible {
+    outline: 2px solid var(--teal-primary);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+
+  /* Button reset — components apply their own styles */
+  button {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-family: inherit;
+  }
+}
+
+/* ============================================================
+   5. Utility layer — custom helpers
+   ============================================================ */
+@layer utilities {
+  /* Teal gradient text — used on headline accent words */
+  .text-gradient-teal {
+    background: linear-gradient(135deg, var(--teal-primary), var(--teal-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Glass card — subtle frosted-glass background */
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+  }
+
+  /* Ambient teal glow shadow */
+  .glow-teal { 
+    box-shadow: 0 0 40px color-mix(in srgb, var(--teal-primary) 25%, transparent); 
+  }
+}
+
+/* ============================================================
+   6. Custom scrollbar — subtle branded style
+   ============================================================ */
+::-webkit-scrollbar       { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--slate-brand); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--teal-dark); }
+
+/* ============================================================
+   7. Text selection — teal highlight colour
+   ============================================================ */
+::selection {
+  background: color-mix(in srgb, var(--teal-primary) 25%, transparent);
+  color: var(--text-primary);
+}
