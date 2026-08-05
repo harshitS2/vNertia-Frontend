@@ -41,7 +41,7 @@ const FOOTER_LINKS = [
 
 // Placeholder social links — update URLs when accounts are live
 const SOCIAL_LINKS = [
-  { icon: Globe,  label: "LinkedIn",  href: "https://linkedin.com"  },
+  { icon: Globe,  label: "LinkedIn",  href: "https://www.linkedin.com/in/pramod-srivastava/"  },
   { icon: AtSign, label: "Twitter/X", href: "https://twitter.com"   },
   { icon: Send,   label: "Instagram", href: "https://instagram.com" },
 ];
