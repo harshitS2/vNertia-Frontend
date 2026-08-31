@@ -103,6 +103,13 @@ export default function EducationNavbar() {
           <div className="hidden md:flex items-center gap-4">
             <ThemeToggle />
             <Button
+              variant="secondary"
+              size="sm"
+              href="/"
+            >
+              Agency Site
+            </Button>
+            <Button
               variant="primary"
               size="sm"
               href="/education/register"
@@ -183,6 +190,14 @@ export default function EducationNavbar() {
             <span className="text-xs font-semibold text-text-muted uppercase">Theme</span>
             <ThemeToggle />
           </div>
+          <Button
+            variant="secondary"
+            size="md"
+            className="w-full justify-center"
+            href="/"
+          >
+            Agency Site
+          </Button>
           <Button
             variant="primary"
             size="md"
