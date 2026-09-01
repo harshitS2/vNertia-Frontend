@@ -19,6 +19,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import Logo from "@/components/ui/Logo";
 import Button from "@/components/ui/Button";
 import { Menu, X } from "lucide-react";
@@ -26,10 +27,11 @@ import ThemeToggle from "@/components/ui/ThemeToggle";
 
 // Navigation link definitions — label + anchor href
 const NAV_LINKS = [
-  { label: "About",       href: "#about"       },
-  { label: "Services",    href: "#services"    },
-  { label: "How We Work", href: "#how-we-work" },
-  { label: "Contact",     href: "#contact"     },
+  { label: "About",       href: "#about",       isAnchor: true },
+  { label: "Services",    href: "#services",    isAnchor: true },
+  { label: "How We Work", href: "#how-we-work", isAnchor: true },
+  { label: "Contact",     href: "#contact",     isAnchor: true },
+  { label: "Education",   href: "/education",   isAnchor: false },
 ];
 
 export default function Navbar() {
@@ -139,22 +141,36 @@ export default function Navbar() {
 
           {/* Desktop nav links */}
           <nav className="hidden md:flex items-center gap-8" aria-label="Main navigation">
-            {NAV_LINKS.map(({ label, href }) => {
+            {NAV_LINKS.map(({ label, href, isAnchor }) => {
               const sectionId = href.replace("#", "");
               const isActive  = activeSection === sectionId;
+              const linkClasses = [
+                "text-sm font-medium transition-colors duration-200",
+                "relative pb-0.5",
+                "after:absolute after:bottom-0 after:left-0 after:h-px",
+                "after:bg-teal-primary after:transition-all after:duration-300",
+                isActive
+                  ? "text-teal-primary after:w-full"
+                  : "text-text-secondary hover:text-text-primary after:w-0 hover:after:w-full",
+              ].join(" ");
+
+              if (!isAnchor) {
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={linkClasses}
+                  >
+                    {label}
+                  </Link>
+                );
+              }
+
               return (
                 <button
                   key={href}
                   onClick={() => handleNavClick(href)}
-                  className={[
-                    "text-sm font-medium transition-colors duration-200",
-                    "relative pb-0.5",
-                    "after:absolute after:bottom-0 after:left-0 after:h-px",
-                    "after:bg-teal-primary after:transition-all after:duration-300",
-                    isActive
-                      ? "text-teal-primary after:w-full"
-                      : "text-text-secondary hover:text-text-primary after:w-0 hover:after:w-full",
-                  ].join(" ")}
+                  className={linkClasses}
                 >
                   {label}
                 </button>
@@ -227,20 +243,35 @@ export default function Navbar() {
 
         {/* Drawer nav links */}
         <nav className="flex flex-col gap-1 px-4 py-6 flex-1" aria-label="Mobile navigation">
-          {NAV_LINKS.map(({ label, href }) => {
+          {NAV_LINKS.map(({ label, href, isAnchor }) => {
             const sectionId = href.replace("#", "");
             const isActive  = activeSection === sectionId;
+            const mobileLinkClasses = [
+              "text-left px-4 py-3 rounded-xl text-base font-medium w-full block",
+              "transition-all duration-200",
+              isActive
+                ? "text-teal-primary bg-teal-primary/10"
+                : "text-text-secondary hover:text-text-primary hover:bg-glass-bg",
+            ].join(" ");
+
+            if (!isAnchor) {
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={() => setMobileOpen(false)}
+                  className={mobileLinkClasses}
+                >
+                  {label}
+                </Link>
+              );
+            }
+
             return (
               <button
                 key={href}
                 onClick={() => handleNavClick(href)}
-                className={[
-                  "text-left px-4 py-3 rounded-xl text-base font-medium",
-                  "transition-all duration-200",
-                  isActive
-                    ? "text-teal-primary bg-teal-primary/10"
-                    : "text-text-secondary hover:text-text-primary hover:bg-glass-bg",
-                ].join(" ")}
+                className={mobileLinkClasses}
               >
                 {label}
               </button>

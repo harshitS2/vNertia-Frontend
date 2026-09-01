@@ -17,8 +17,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 import { ThemeProvider } from "@/context/ThemeContext";
 
 // ---------------------------------------------------------------------------
@@ -133,16 +131,7 @@ export default function RootLayout({
       </head>
       <body className="font-inter antialiased bg-navy-deep text-text-primary overflow-x-hidden">
         <ThemeProvider>
-          {/* Global navigation — sticky, appears on every page */}
-          <Navbar />
-
-          {/* Page content — supplied by each route's page.tsx */}
-          <main>
-            {children}
-          </main>
-
-          {/* Global footer */}
-          <Footer />
+          {children}
         </ThemeProvider>
       </body>
     </html>
