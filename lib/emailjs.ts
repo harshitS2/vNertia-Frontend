@@ -1,25 +1,28 @@
 /**
  * lib/emailjs.ts
  *
- * Client-side EmailJS integration module for static Next.js deployments.
+ * Contact submission module for Next.js deployments on Vercel.
  *
- * Requirements:
- *   - Works in purely static deployments (output: "export" -> out/)
- *   - Uses official @emailjs/browser SDK
- *   - Reads public configuration from environment variables:
- *       NEXT_PUBLIC_EMAILJS_PUBLIC_KEY
- *       NEXT_PUBLIC_EMAILJS_SERVICE_ID
- *       NEXT_PUBLIC_EMAILJS_TEMPLATE_ID
- *   - Safe for browser execution: No private keys or database passwords used.
+ * Dispatches via the Next.js API route (/api/contact) and
+ * falls back to client-side EmailJS SDK if needed.
  */
 
 import emailjs from "@emailjs/browser";
 
 // Environment configuration variables
 export const EMAILJS_CONFIG = {
-  publicKey: process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY ?? "",
-  serviceId: process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID ?? "",
-  templateId: process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID ?? "",
+  publicKey:
+    process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY ||
+    process.env.EMAILJS_PUBLIC_KEY ||
+    "",
+  serviceId:
+    process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID ||
+    process.env.EMAILJS_SERVICE_ID ||
+    "",
+  templateId:
+    process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID ||
+    process.env.EMAILJS_TEMPLATE_ID ||
+    "",
 };
 
 export interface ContactEmailPayload {
@@ -31,7 +34,7 @@ export interface ContactEmailPayload {
 }
 
 /**
- * Checks whether all required EmailJS environment variables are configured.
+ * Checks whether client EmailJS environment variables are configured.
  */
 export function isEmailJSConfigured(): boolean {
   return Boolean(
@@ -48,7 +51,8 @@ export function isEmailJSConfigured(): boolean {
 }
 
 /**
- * Sends a contact form submission via EmailJS browser SDK.
+ * Sends a contact form submission.
+ * First tries the Next.js server API route (/api/contact), then falls back to browser SDK.
  *
  * @throws Error with user-friendly message on failure.
  */
@@ -61,11 +65,41 @@ export async function sendContactEmail(payload: ContactEmailPayload): Promise<vo
   if (!subject.trim()) throw new Error("Subject is required.");
   if (!message.trim()) throw new Error("Message is required.");
 
-  // Check configuration
+  // 1. Primary: Server API route (/api/contact)
+  try {
+    const res = await fetch("/api/contact", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name, email, subject, message, company }),
+    });
+
+    if (res.ok) {
+      const data = await res.json().catch(() => ({ success: true }));
+      if (data.success) {
+        return;
+      }
+    } else {
+      const errData = await res.json().catch(() => null);
+      if (errData?.error) {
+        // If it's a validation error or known server message, surface it
+        if (!errData.error.includes("not configured")) {
+          throw new Error(errData.error);
+        }
+      }
+    }
+  } catch (apiErr) {
+    // If it's a known error thrown above, re-throw it
+    if (apiErr instanceof Error && !apiErr.message.includes("fetch")) {
+      console.warn("[/api/contact error]:", apiErr.message);
+    }
+  }
+
+  // 2. Fallback: Browser SDK
   const isConfigured = isEmailJSConfigured();
 
   if (!isConfigured) {
-    // Development fallback simulation
     if (process.env.NODE_ENV === "development") {
       console.warn(
         "[EmailJS] Missing or placeholder EmailJS credentials in .env.local.\n" +
@@ -73,26 +107,21 @@ export async function sendContactEmail(payload: ContactEmailPayload): Promise<vo
         "Simulating email dispatch for local testing.",
         payload
       );
-      // Simulate network latency
       await new Promise((resolve) => setTimeout(resolve, 800));
       return;
     }
 
     throw new Error(
-      "Email service is not configured. Please set the EmailJS environment variables and rebuild."
+      "Email service is not configured. Please set the EmailJS environment variables in your Vercel Project Settings."
     );
   }
 
-  // Template parameters mapped to common EmailJS variable patterns
   const templateParams: Record<string, string> = {
-    // Standard names
     name: name.trim(),
     email: email.trim(),
     company: company?.trim() || "Not specified",
     subject: subject.trim(),
     message: message.trim(),
-
-    // EmailJS alias variables
     from_name: name.trim(),
     from_email: email.trim(),
     reply_to: email.trim(),
@@ -120,11 +149,9 @@ export async function sendContactEmail(payload: ContactEmailPayload): Promise<vo
     console.error("[EmailJS Error]:", error);
 
     if (error instanceof Error) {
-      // Re-throw known message
-      throw new Error(error.message || "Failed to send message via EmailJS. Please try again.");
+      throw new Error(error.message || "Failed to send message. Please try again.");
     }
 
-    // EmailJS error objects often have a 'text' property
     if (typeof error === "object" && error !== null && "text" in error) {
       const errorObj = error as { text?: string; status?: number };
       throw new Error(errorObj.text || `EmailJS Error (${errorObj.status ?? "unknown"})`);
