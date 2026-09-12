@@ -20,10 +20,7 @@
  */
 
 // The base URL of the Express backend — set in .env.local or hosting env
-const API_BASE_URL =
-  process.env.API_URL ??
-  process.env.NEXT_PUBLIC_API_URL ??
-  "http://localhost:4000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 // ---------------------------------------------------------------------------
 // Type: Contact form payload
