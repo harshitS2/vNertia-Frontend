@@ -2,6 +2,7 @@
  * app/(education)/education/(portal)/contact/page.tsx
  *
  * Contact & Community page for the Vnertia Education portal.
+ * Integrated with client-side EmailJS service for static hosting.
  */
 
 "use client";
@@ -10,20 +11,24 @@ import React, { useState, FormEvent } from "react";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import Button from "@/components/ui/Button";
 import { Mail, Send, CheckCircle2, AlertCircle, Loader2, Users } from "lucide-react";
-import { submitContactForm } from "@/lib/api";
+import { sendContactEmail } from "@/lib/emailjs";
 
 interface ContactFormData {
   name: string;
   email: string;
+  subject: string;
   message: string;
 }
 
 type SubmitStatus = "idle" | "loading" | "success" | "error";
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function EducationContactPage() {
   const [formData, setFormData] = useState<ContactFormData>({
     name: "",
     email: "",
+    subject: "",
     message: "",
   });
   const [status, setStatus] = useState<SubmitStatus>("idle");
@@ -34,28 +39,46 @@ export default function EducationContactPage() {
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    if (status === "error") {
+      setStatus("idle");
+      setErrorMessage("");
+    }
+  };
+
+  const validate = (): string | null => {
+    if (!formData.name.trim()) return "Please enter your name.";
+    if (!formData.email.trim()) return "Please enter your email address.";
+    if (!EMAIL_REGEX.test(formData.email.trim())) return "Please enter a valid email address.";
+    if (!formData.subject.trim()) return "Please enter a subject.";
+    if (!formData.message.trim()) return "Please enter your message.";
+    return null;
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setStatus("loading");
-    setErrorMessage("");
 
-    // Simple validation
-    if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
+    if (status === "loading") return;
+
+    const valError = validate();
+    if (valError) {
       setStatus("error");
-      setErrorMessage("All fields are required.");
+      setErrorMessage(valError);
       return;
     }
 
+    setStatus("loading");
+    setErrorMessage("");
+
     try {
-      // Reuse submitContactForm from api helper (company can be blank/placeholder)
-      await submitContactForm({
-        ...formData,
-        company: "Vnertia Education Candidate",
+      await sendContactEmail({
+        name: formData.name,
+        email: formData.email,
+        subject: formData.subject,
+        message: formData.message,
+        company: "Vnertia Education Portal",
       });
       setStatus("success");
-      setFormData({ name: "", email: "", message: "" });
+      setFormData({ name: "", email: "", subject: "", message: "" });
     } catch (err: unknown) {
       setStatus("error");
       const msg = err instanceof Error ? err.message : "Something went wrong. Please try again.";
@@ -70,7 +93,10 @@ export default function EducationContactPage() {
     "text-sm focus:outline-none focus:border-teal-primary/60 focus:bg-glass-bg/20",
     "transition-all duration-200",
     "hover:border-teal-primary/20",
+    "disabled:opacity-60 disabled:cursor-not-allowed",
   ].join(" ");
+
+  const isLoading = status === "loading";
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-12 space-y-16">
@@ -81,7 +107,7 @@ export default function EducationContactPage() {
           Have a Question, or Want to <span className="text-gradient-teal">Join Our Community?</span>
         </h1>
         <p className="text-lg text-text-secondary leading-relaxed">
-          Reach out and our team will get back to you. We're here to help you guide your learning journey.
+          Reach out and our team will get back to you. We&apos;re here to help you guide your learning journey.
         </p>
       </div>
 
@@ -117,10 +143,10 @@ export default function EducationContactPage() {
 
         {/* Right Column: Contact form */}
         <div className="bg-navy border border-glass-border rounded-3xl p-6 md:p-8 shadow-xl">
-          <form onSubmit={handleSubmit} noValidate className="space-y-5">
+          <form onSubmit={handleSubmit} noValidate className="space-y-5" aria-label="Education contact form">
             <div>
               <label htmlFor="name" className="block text-xs font-semibold text-text-muted mb-1.5 uppercase tracking-wider">
-                Name *
+                Name <span className="text-teal-primary">*</span>
               </label>
               <input
                 id="name"
@@ -128,37 +154,59 @@ export default function EducationContactPage() {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
+                disabled={isLoading}
                 placeholder="Your name"
                 required
                 className={inputClass}
               />
             </div>
 
-            <div>
-              <label htmlFor="email" className="block text-xs font-semibold text-text-muted mb-1.5 uppercase tracking-wider">
-                Email *
-              </label>
-              <input
-                id="email"
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="you@example.com"
-                required
-                className={inputClass}
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="email" className="block text-xs font-semibold text-text-muted mb-1.5 uppercase tracking-wider">
+                  Email <span className="text-teal-primary">*</span>
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  disabled={isLoading}
+                  placeholder="you@example.com"
+                  required
+                  className={inputClass}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="subject" className="block text-xs font-semibold text-text-muted mb-1.5 uppercase tracking-wider">
+                  Subject <span className="text-teal-primary">*</span>
+                </label>
+                <input
+                  id="subject"
+                  type="text"
+                  name="subject"
+                  value={formData.subject}
+                  onChange={handleChange}
+                  disabled={isLoading}
+                  placeholder="e.g. Program Inquiry"
+                  required
+                  className={inputClass}
+                />
+              </div>
             </div>
 
             <div>
               <label htmlFor="message" className="block text-xs font-semibold text-text-muted mb-1.5 uppercase tracking-wider">
-                Message *
+                Message <span className="text-teal-primary">*</span>
               </label>
               <textarea
                 id="message"
                 name="message"
                 value={formData.message}
                 onChange={handleChange}
+                disabled={isLoading}
                 placeholder="How can we help? Tell us what you're looking to explore..."
                 required
                 rows={5}
@@ -170,21 +218,21 @@ export default function EducationContactPage() {
               type="submit"
               variant="primary"
               size="md"
-              disabled={status === "loading"}
-              className="w-full justify-center"
+              disabled={isLoading}
+              className="w-full justify-center disabled:opacity-60 disabled:cursor-not-allowed"
               icon={
-                status === "loading" ? (
+                isLoading ? (
                   <Loader2 size={16} className="animate-spin" />
                 ) : (
                   <Send size={16} />
                 )
               }
             >
-              {status === "loading" ? "Sending..." : "Send Message"}
+              {isLoading ? "Sending Message..." : "Send Message"}
             </Button>
 
             {status === "success" && (
-              <div className="flex items-start gap-2.5 p-4 rounded-xl bg-teal-primary/10 border border-teal-primary/25 text-teal-primary text-xs">
+              <div role="alert" className="flex items-start gap-2.5 p-4 rounded-xl bg-teal-primary/10 border border-teal-primary/25 text-teal-primary text-xs">
                 <CheckCircle2 size={16} className="flex-shrink-0 mt-0.5" />
                 <span>
                   Thank you! Your message was submitted successfully.
@@ -193,7 +241,7 @@ export default function EducationContactPage() {
             )}
 
             {status === "error" && (
-              <div className="flex items-start gap-2.5 p-4 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-xs">
+              <div role="alert" className="flex items-start gap-2.5 p-4 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-xs">
                 <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
                 <span>{errorMessage}</span>
               </div>

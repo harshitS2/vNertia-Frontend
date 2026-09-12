@@ -3,20 +3,13 @@
  *
  * CTA + Contact Form section — final section before the footer.
  *
- * Layout:
- *   - Full-width teal gradient background (from dark navy to teal)
- *   - Left side: large headline "Let's build it — together." + sub-copy
- *   - Right side: contact form (Name, Email, Company, Message, Submit)
- *
- * Form behaviour:
- *   - Client-side validation (required fields, email format)
- *   - On submit, POSTs to Express backend at /api/contact
- *   - Shows loading state on the button
- *   - Shows success or error toast message after submission
- *   - Currently falls back gracefully if backend is not running
- *
- * The form will POST JSON to: process.env.NEXT_PUBLIC_API_URL + "/api/contact"
- * which defaults to http://localhost:4000 (the Express backend).
+ * Features:
+ *   - Pure client-side EmailJS integration (works with static export out/)
+ *   - Fields: Name *, Company, Email *, Subject *, Message *
+ *   - Comprehensive client-side validation (required fields + email regex)
+ *   - Duplicate submission protection with loading state & disabled controls
+ *   - Clean success & error alert feedback
+ *   - Dark glassmorphic responsive design
  */
 
 "use client";
@@ -27,67 +20,123 @@ import Button from "@/components/ui/Button";
 import SectionLabel from "@/components/ui/SectionLabel";
 import { fadeUpVariants } from "@/lib/motionVariants";
 import { Send, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
-import { submitContactForm } from "@/lib/api";
+import { sendContactEmail } from "@/lib/emailjs";
 
 // Form field state shape
 interface FormData {
-  name:    string;
-  email:   string;
+  name: string;
+  email: string;
   company: string;
+  subject: string;
   message: string;
 }
 
 // Status of the form submission
 type SubmitStatus = "idle" | "loading" | "success" | "error";
 
-const fadeUp = {
-  hidden:  { opacity: 0, y: 28 },
-  visible: (delay = 0) => ({
-    opacity: 1, y: 0,
-    transition: { duration: 0.65, ease: [0.22, 1, 0.36, 1], delay },
-  }),
-};
+// Standard email validation pattern
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function ContactSection() {
-  const ref    = useRef<HTMLElement>(null);
+  const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
 
   // Form state
   const [formData, setFormData] = useState<FormData>({
-    name:    "",
-    email:   "",
+    name: "",
+    email: "",
     company: "",
+    subject: "",
     message: "",
   });
-  const [status,       setStatus]       = useState<SubmitStatus>("idle");
+  const [status, setStatus] = useState<SubmitStatus>("idle");
   const [errorMessage, setErrorMessage] = useState<string>("");
 
   // -------------------------------------------------------------------------
-  // Handle input changes — single handler for all fields
+  // Handle input changes
   // -------------------------------------------------------------------------
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    // Clear error once user starts editing
+    if (status === "error") {
+      setStatus("idle");
+      setErrorMessage("");
+    }
   };
 
   // -------------------------------------------------------------------------
-  // Handle form submission
+  // Validate form fields
+  // -------------------------------------------------------------------------
+  const validateForm = (): string | null => {
+    if (!formData.name.trim()) {
+      return "Please enter your name.";
+    }
+    if (!formData.email.trim()) {
+      return "Please enter your email address.";
+    }
+    if (!EMAIL_REGEX.test(formData.email.trim())) {
+      return "Please enter a valid email address (e.g. name@domain.com).";
+    }
+    if (!formData.subject.trim()) {
+      return "Please enter a subject for your message.";
+    }
+    if (!formData.message.trim()) {
+      return "Please enter your message.";
+    }
+    if (formData.message.trim().length < 10) {
+      return "Please enter a message with at least 10 characters.";
+    }
+    return null;
+  };
+
+  // -------------------------------------------------------------------------
+  // Handle form submission with duplicate prevention & EmailJS
   // -------------------------------------------------------------------------
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+
+    // Guard against duplicate clicks while request is in-flight
+    if (status === "loading") {
+      return;
+    }
+
+    const validationError = validateForm();
+    if (validationError) {
+      setStatus("error");
+      setErrorMessage(validationError);
+      return;
+    }
+
     setStatus("loading");
     setErrorMessage("");
 
     try {
-      await submitContactForm(formData);
+      await sendContactEmail({
+        name: formData.name,
+        email: formData.email,
+        company: formData.company,
+        subject: formData.subject,
+        message: formData.message,
+      });
+
       setStatus("success");
       // Reset form on success
-      setFormData({ name: "", email: "", company: "", message: "" });
+      setFormData({
+        name: "",
+        email: "",
+        company: "",
+        subject: "",
+        message: "",
+      });
     } catch (err: unknown) {
       setStatus("error");
-      const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Something went wrong sending your message. Please try again.";
       setErrorMessage(message);
     }
   };
@@ -100,7 +149,10 @@ export default function ContactSection() {
     "text-sm focus:outline-none focus:border-teal-primary/60 focus:bg-glass-bg/20",
     "transition-all duration-200",
     "hover:border-teal-primary/20",
+    "disabled:opacity-60 disabled:cursor-not-allowed",
   ].join(" ");
+
+  const isLoading = status === "loading";
 
   return (
     <section
@@ -182,11 +234,11 @@ export default function ContactSection() {
               className="p-8 rounded-2xl bg-glass-bg border border-glass-border space-y-5"
               aria-label="Contact form"
             >
-              {/* Row: Name + Company */}
+              {/* Row 1: Name + Company */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="contact-name" className="block text-xs font-medium text-text-muted mb-1.5 uppercase tracking-wider">
-                    Name *
+                    Name <span className="text-teal-primary">*</span>
                   </label>
                   <input
                     id="contact-name"
@@ -194,6 +246,7 @@ export default function ContactSection() {
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
+                    disabled={isLoading}
                     placeholder="Your name"
                     required
                     className={inputClass}
@@ -210,41 +263,63 @@ export default function ContactSection() {
                     name="company"
                     value={formData.company}
                     onChange={handleChange}
-                    placeholder="Your company"
+                    disabled={isLoading}
+                    placeholder="Your company (optional)"
                     className={inputClass}
                     suppressHydrationWarning
                   />
                 </div>
               </div>
 
-              {/* Email */}
-              <div>
-                <label htmlFor="contact-email" className="block text-xs font-medium text-text-muted mb-1.5 uppercase tracking-wider">
-                  Email *
-                </label>
-                <input
-                  id="contact-email"
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="you@company.com"
-                  required
-                  className={inputClass}
-                  suppressHydrationWarning
-                />
+              {/* Row 2: Email + Subject */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="contact-email" className="block text-xs font-medium text-text-muted mb-1.5 uppercase tracking-wider">
+                    Email <span className="text-teal-primary">*</span>
+                  </label>
+                  <input
+                    id="contact-email"
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    disabled={isLoading}
+                    placeholder="you@company.com"
+                    required
+                    className={inputClass}
+                    suppressHydrationWarning
+                  />
+                </div>
+                <div>
+                  <label htmlFor="contact-subject" className="block text-xs font-medium text-text-muted mb-1.5 uppercase tracking-wider">
+                    Subject <span className="text-teal-primary">*</span>
+                  </label>
+                  <input
+                    id="contact-subject"
+                    type="text"
+                    name="subject"
+                    value={formData.subject}
+                    onChange={handleChange}
+                    disabled={isLoading}
+                    placeholder="e.g. Website Redesign"
+                    required
+                    className={inputClass}
+                    suppressHydrationWarning
+                  />
+                </div>
               </div>
 
               {/* Message */}
               <div>
                 <label htmlFor="contact-message" className="block text-xs font-medium text-text-muted mb-1.5 uppercase tracking-wider">
-                  Message *
+                  Message <span className="text-teal-primary">*</span>
                 </label>
                 <textarea
                   id="contact-message"
                   name="message"
                   value={formData.message}
                   onChange={handleChange}
+                  disabled={isLoading}
                   placeholder="Tell us about your brand, goals, or where you're stuck..."
                   required
                   rows={5}
@@ -257,32 +332,46 @@ export default function ContactSection() {
                 type="submit"
                 variant="primary"
                 size="md"
-                disabled={status === "loading"}
-                className="w-full justify-center"
+                disabled={isLoading}
+                className="w-full justify-center disabled:opacity-60 disabled:cursor-not-allowed"
                 icon={
-                  status === "loading"
-                    ? <Loader2 size={16} className="animate-spin" />
-                    : <Send size={16} />
+                  isLoading ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <Send size={16} />
+                  )
                 }
               >
-                {status === "loading" ? "Sending..." : "Send Message"}
+                {isLoading ? "Sending Message..." : "Send Message"}
               </Button>
 
               {/* Success feedback */}
               {status === "success" && (
-                <div className="flex items-start gap-2.5 p-4 rounded-xl bg-teal-primary/10 border border-teal-primary/25 text-teal-primary text-sm">
-                  <CheckCircle2 size={16} className="flex-shrink-0 mt-0.5" />
-                  <span>
-                    Message sent! We&apos;ll be in touch within 24 hours.
-                  </span>
+                <div
+                  role="alert"
+                  className="flex items-start gap-2.5 p-4 rounded-xl bg-teal-primary/10 border border-teal-primary/25 text-teal-primary text-sm animate-fade-in"
+                >
+                  <CheckCircle2 size={18} className="flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold">Message sent successfully!</p>
+                    <p className="text-xs text-teal-primary/80 mt-0.5">
+                      Thank you for reaching out. We&apos;ll get back to you within 24 hours.
+                    </p>
+                  </div>
                 </div>
               )}
 
               {/* Error feedback */}
               {status === "error" && (
-                <div className="flex items-start gap-2.5 p-4 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-sm">
-                  <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
-                  <span>{errorMessage}</span>
+                <div
+                  role="alert"
+                  className="flex items-start gap-2.5 p-4 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-sm animate-fade-in"
+                >
+                  <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold">Submission failed</p>
+                    <p className="text-xs text-red-300/90 mt-0.5">{errorMessage}</p>
+                  </div>
                 </div>
               )}
             </form>

@@ -34,6 +34,10 @@ const inter = Inter({
 // These improve SEO and how the site appears when shared on social media.
 // ---------------------------------------------------------------------------
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.vnertia.com"),
+  alternates: {
+    canonical: "https://www.vnertia.com",
+  },
   title: {
     default:  "Vnertia — Where Effort Turns Into Momentum",
     template: "%s | Vnertia",  // used for inner pages: "Services | Vnertia"
@@ -58,7 +62,7 @@ export const metadata: Metadata = {
   openGraph: {
     type:        "website",
     locale:      "en_US",
-    url:         "https://vnertia.com",
+    url:         "https://www.vnertia.com",
     siteName:    "Vnertia",
     title:       "Vnertia — Where Effort Turns Into Momentum",
     description: "We don't chase growth. We build it — with structured thinking, practical execution, and systems designed for lasting results.",
