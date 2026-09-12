@@ -46,6 +46,8 @@ export async function POST(request: Request) {
       "";
     const privateKey =
       process.env.EMAILJS_PRIVATE_KEY ||
+      process.env.EMAILJS_ACCESS_TOKEN ||
+      process.env.NEXT_PUBLIC_EMAILJS_PRIVATE_KEY ||
       "";
 
     // Handle development fallback if keys are missing
