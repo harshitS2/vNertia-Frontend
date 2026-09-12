@@ -34,7 +34,11 @@ const inter = Inter({
 // These improve SEO and how the site appears when shared on social media.
 // ---------------------------------------------------------------------------
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.vnertia.com"),
+  metadataBase: new URL(
+    process.env.SITE_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    "https://www.vnertia.com"
+  ),
   alternates: {
     canonical: "https://www.vnertia.com",
   },

@@ -17,9 +17,18 @@ import emailjs from "@emailjs/browser";
 
 // Environment configuration variables
 export const EMAILJS_CONFIG = {
-  publicKey: process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY ?? "",
-  serviceId: process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID ?? "",
-  templateId: process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID ?? "",
+  publicKey:
+    process.env.EMAILJS_PUBLIC_KEY ||
+    process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY ||
+    "",
+  serviceId:
+    process.env.EMAILJS_SERVICE_ID ||
+    process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID ||
+    "",
+  templateId:
+    process.env.EMAILJS_TEMPLATE_ID ||
+    process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID ||
+    "",
 };
 
 export interface ContactEmailPayload {
@@ -69,7 +78,7 @@ export async function sendContactEmail(payload: ContactEmailPayload): Promise<vo
     if (process.env.NODE_ENV === "development") {
       console.warn(
         "[EmailJS] Missing or placeholder EmailJS credentials in .env.local.\n" +
-        "NEXT_PUBLIC_EMAILJS_PUBLIC_KEY, NEXT_PUBLIC_EMAILJS_SERVICE_ID, or NEXT_PUBLIC_EMAILJS_TEMPLATE_ID not configured.\n" +
+        "EMAILJS_PUBLIC_KEY, EMAILJS_SERVICE_ID, or EMAILJS_TEMPLATE_ID not configured.\n" +
         "Simulating email dispatch for local testing.",
         payload
       );
